@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 
 def setup_google_calendar_service():
@@ -42,39 +42,7 @@ def setup_google_calendar_service():
         print(f"An error occurred: {error}")
 
 
-def get_events(start_time, end_time):
-    """ Fetches events from the user's primary calendar between start_time
-    and end_time
-    """
-    service = setup_google_calendar_service()
-    # The API needs RFC 3339 timestamps with a timezone; naive datetimes are
-    # treated as local time.
-    time_min = start_time.astimezone().isoformat()
-    time_max = end_time.astimezone().isoformat()
-    print("Getting the upcoming 10 events")
-    events_result = (
-        service.events()
-        .list(
-            calendarId="primary",
-            timeMin=time_min,
-            timeMax=time_max,
-            maxResults=None,
-            singleEvents=True,
-            orderBy="startTime",
-        )
-        .execute()
-    )
-    events = events_result.get("items", [])
-
-    if not events:
-        print("No upcoming events found.")
-        return
-
-    # Prints the start and name of the next 10 events
-    for event in events:
-        start = event["start"].get("dateTime", event["start"].get("date"))
-        print(start, event["summary"])
-
-
+'''
 print(get_events(datetime.datetime.now(),
       datetime.datetime.now() + datetime.timedelta(days=90)))
+'''
