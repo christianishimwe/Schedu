@@ -2,7 +2,7 @@ from langchain.tools import tool
 from datetime import datetime
 from typing import Any
 from googleapiclient.errors import HttpError
-from g_calendar import setup_google_calendar_service
+from utils.g_calendar import setup_google_calendar_service
 
 service = setup_google_calendar_service()
 
