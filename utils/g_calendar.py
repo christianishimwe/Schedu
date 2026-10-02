@@ -11,10 +11,9 @@ from googleapiclient.errors import HttpError
 SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 
-def setup_google_calendar_service():
-    """Shows basic usage of the Google Calendar API.
-    Prints the start and name of the next 10 events on the user's calendar.
-    """
+def get_credentials():
+    """Loads OAuth credentials from token.json, refreshing or logging in
+    as needed."""
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -33,7 +32,15 @@ def setup_google_calendar_service():
         # Save the credentials for the next run
         with open("token.json", "w") as token:
             token.write(creds.to_json())
+    return creds
 
+
+def setup_google_calendar_service(creds=None):
+    """Builds a Calendar API client. Each client holds its own httplib2
+    connection, which is not thread-safe, so don't share one across threads.
+    """
+    if creds is None:
+        creds = get_credentials()
     try:
         service = build("calendar", "v3", credentials=creds)
         return service

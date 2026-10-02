@@ -1,10 +1,20 @@
+import threading
 from langchain.tools import tool
 from datetime import datetime
 from typing import Any
 from googleapiclient.errors import HttpError
-from utils.g_calendar import setup_google_calendar_service
+from utils.g_calendar import get_credentials, setup_google_calendar_service
 
-service = setup_google_calendar_service()
+creds = get_credentials()
+_local = threading.local()
+
+
+def get_service():
+    # The agent runs parallel tool calls on separate threads, and httplib2
+    # connections aren't thread-safe, so each thread gets its own client.
+    if not hasattr(_local, "service"):
+        _local.service = setup_google_calendar_service(creds)
+    return _local.service
 
 
 @tool
@@ -17,7 +27,7 @@ def get_events(start_time: datetime, end_time: datetime) -> dict[str, list[dict[
     time_min = start_time.astimezone().isoformat()
     time_max = end_time.astimezone().isoformat()
     events_result = (
-        service.events()
+        get_service().events()
         .list(
             calendarId="primary",
             timeMin=time_min,
@@ -77,8 +87,12 @@ def add_event(
         "end": {"dateTime": end_time.astimezone().isoformat()},
     }
     try:
-        event = service.events().insert(calendarId="primary", body=body).execute()
-    except HttpError as error:
+        event = (
+            get_service().events()
+            .insert(calendarId="primary", body=body)
+            .execute(num_retries=2)
+        )
+    except (HttpError, TimeoutError) as error:
         # Return the error to the model instead of crashing the agent loop,
         # so it can fix its arguments and retry or tell the user.
         return {"error": str(error)}
